@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>IT Marketplace Application</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script 
+		src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+		<!-- google fonts -->
+
+		<!-- Css link -->
+		<link rel="stylesheet" href="http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+		<link rel="stylesheet" href="css/font-awesome.min.css">
+		<link rel="stylesheet" href="css/owl.carousel.css">
+		<link rel="stylesheet" href="css/owl.transitions.css">
+		<link rel="stylesheet" href="css/animate.min.css">
+		<link rel="stylesheet" href="css/lightbox.css">
+		<link rel="stylesheet" href="css/bootstrap.min.css">
+		<link rel="stylesheet" href="css/preloader.css">
+		<link rel="stylesheet" href="css/image.css">
+		<link rel="stylesheet" href="css/icon.css">
+		<link rel="stylesheet" href="css/style.css">
+		<link rel="stylesheet" href="css/responsive.css">
+<style>
+	#banner {
+   
+    background-size: cover;
+    padding: 120px 0;
+    position: relative;
+}
+#contact-form {
+    padding: 50px 0;
+    background: #f9f9f9;
+}
+.title {
+    text-align: center;
+    padding-bottom: 0px;
+}
+</style>
+	</head>
+	<body id="top">
+	
+
+        <header id="navigation" class="navbar-fixed-top animated-header">
+            <div class="container">
+                <div class="navbar-header">
+                    <!-- responsive nav button -->
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+                    </button>
+					<!-- /responsive nav button -->
+					
+					<!-- logo -->
+					<h1 class="navbar-brand">
+						<a href="#body"><img src="img/logo.png" alt=""></a>
+					</h1>
+					<!-- /logo -->
+                </div>
+
+				<!-- main nav -->
+                <nav class="collapse navbar-collapse navbar-right" role="navigation">
+                    <ul id="nav" class="nav navbar-nav menu">
+                        <li><a href="#top" style="color: white;">Home</a></li>
+                        <li><a href="#top" style="color: white;">All Listing</a></li>
+                        <li><a href="devlogin.html" style="color: white;">Sign Out</a></li>
+                        <li><a href="alllisting.html" style="color: white;">Employer Page</a></li>
+                    </ul>
+                </nav>
+				<!-- /main nav -->
+				
+            </div>
+        </header>
+
+<script>
+
+		$(async() =>  {           
+			const queryString = window.location.search;
+			const urlParams = new URLSearchParams(queryString);
+			const Name = urlParams.get('Name');
+			document.getElementById('welcome').innerText = "Welcome Developer\n" + Name + "!";
+            // Change serviceURL to your own
+            var serviceURL = "http://localhost:5000/developer/" + Name;
+     
+            try {
+                const response =
+                 await fetch(
+                   serviceURL, { method: 'GET' }
+                );
+                const result = await response.json();
+                 if (response.status === 200) {
+                    // success case
+                    show_listings();
+                } else if (response.status == 404) {
+                    // No books
+					console.log('test')
+					document.getElementById('welcome').innerText = `Invalid User! Please Sign Out!`;
+					document.getElementById('listingtable').innerHTML = ``;
+                    showError(result.message);
+                } else {
+                    // unexpected outcome, throw the error
+                    throw response.status;
+                }
+            } catch (error) {
+                // Errors when calling the service; such as network error, 
+                // service offline, etc
+                //showError('There is a problem retrieving listing data, please try again later.<br />' + error);
+            } // error
+    });
+
+
+
+	//show listings
+	async function show_listings() {           
+            // Change serviceURL to your own
+            var serviceURL = "http://localhost:5001/listing";
+     
+            try {
+                const response =
+                 await fetch(
+                   serviceURL, { method: 'GET' }
+                );
+                const result = await response.json();
+                 if (response.status === 200) {
+                    // success case
+                    console.log(result);
+                    console.log(result.data);
+                    var listings = result.data.listings; //the array is in books within data of 
+                                                   // the returned result
+                    // for loop to setup all table rows with obtained book data
+                    var rows = "";
+					var Name = "";
+                    for (const listing of listings) {
+						if (listing.Name == null) {
+							title = String(listing.Title);
+							console.log(listing.Title)
+							eachRow ="<td>" + listing.Title + "</td>" +
+                                "<td>" + listing.ProgrammingLanguage + "</td>" +
+								"<td>" + listing.ListingDescription + "</td>" +
+                                "<td>" + listing.Price + "</td>" +
+                                "<td>" + listing.Status + "</td>" +
+								"<td> --- </td>"+
+                                "<td>" + `<div style='text-align: center;'><button type='button' style='border-radius: 20px; font-weight: bold;' class='btn btn-success' onclick='updateInterest("`+title+`",`+listing.ListingID+`)'>Post Interest</button></div>` + "</td>";
+						} else {
+							continue;
+						}
+					rows += "<tbody><tr>" + eachRow + "</tr></tbody>";
+					//console.log($('#ListingID').val())
+                    }
+         		// add all the rows to the table
+         		$('#listingtable').append(rows);
+                } else if (response.status == 404) {
+                    // No books
+                    showError(result.message);
+                } else {
+                    // unexpected outcome, throw the error
+                    throw response.status;
+                }
+            } catch (error) {
+                // Errors when calling the service; such as network error, 
+                // service offline, etc
+                //showError('There is a problem retrieving listing data, please try again later.<br />' + error);
+            } // error
+    };
+
+	async function updateInterest(Title,ListingID) {
+		event.preventDefault();
+		const queryString = window.location.search;
+		const urlParams = new URLSearchParams(queryString);
+		var Name = urlParams.get('Name');
+		var Title = Title;
+		console.log(Title);
+		var ListingID = ListingID;
+        var serviceURL = "http://localhost:5002/interest";
+        console.log(serviceURL);
+            try {
+                console.log(JSON.stringify({Title:Title, ListingID:ListingID, Name:Name}));
+                const response =
+                await fetch(
+                   serviceURL, { method: 'POST'  ,headers: { "Content-Type": "application/json" }, body: JSON.stringify({Title:Title, ListingID:ListingID, Name:Name})}
+                );
+                result = await response.json();
+                console.log(result.data);
+				document.getElementById("success").innerText = "Success! Interest had been added!"
+             
+                
+                
+                
+            } catch (error) {
+                // Errors when calling the service; such as network error, 
+                // service offline, etc
+                
+    ('Error:<br />' + error);
+            } // error
+       }
+</script>
+	<div class="wrapper" style="background-color: #222222;">
+		<section id="banner">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="block" style="margin-bottom: -100px;"> 
+							<h1 style="font-weight: bold; text-align: center; font-size: 80px; color: red;"><span id="welcome"></span></h1>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+		</section>
+	
+		<div id="main-container" class="container" style="padding: 100px;">
+			<h1 class="display-4" style="color: white;">All Listing</h1>
+			<table style="color: white;" id="listingtable" class='table table-dark table-bordered' border='1'>
+				<thead class='thead-dark'>
+					<tr>
+						<th>Title</th>
+						<th>Language</th>
+						<th>Description</th>
+						<th>Price</th>
+						<th>Status</th>
+						<th>Assigned Developer</th>
+						<th>Show Interest</th>
+					</tr>
+				</thead>
+			</table>
+		<p style="color: green; text-align: center; font-weight: bold;" id="success"></p>
+		</div>
+		
+
+		
+		<footer>
+			<div class="container">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="block">
+							<a href="#"><img src="img/logo.png" alt=""></a>
+							<p>All rights reserved © 2021</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</footer>
+	</div>
+
+		<!-- load Js -->
+		<script src="js/jquery-1.11.3.min.js"></script>
+		<script src="js/bootstrap.min.js"></script>
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBI14J_PNWVd-m0gnUBkjmhoQyNyd7nllA"></script>
+		<script src="js/waypoints.min.js"></script>
+		<script src="js/lightbox.js"></script>
+		<script src="js/jquery.counterup.min.js"></script>
+		<script src="js/owl.carousel.min.js"></script>
+		<script src="js/html5lightbox.js"></script>
+		<script src="js/jquery.mixitup.js"></script>
+		<script src="js/wow.min.js"></script>
+		<script src="js/jquery.scrollUp.js"></script>
+		<script src="js/jquery.sticky.js"></script>
+		<script src="js/jquery.nav.js"></script>
+		<script src="js/main.js"></script>
+	</body>
+</html>

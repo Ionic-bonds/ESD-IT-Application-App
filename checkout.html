@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Buy cool new product</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://polyfill.io/v3/polyfill.min.js?version=3.52.1&features=fetch"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+  </head>
+  <body>
+    <section>
+      <div class="product">
+        <img
+          src="img/job_image.jfif"
+          alt="Job Listing"
+        />
+        <div class="description">
+          <h3 id='job'></h3>
+          <h5 id="price"></h5>
+          <h5 id='name' style='font-weight:bold'>Pay to&nbsp</h5>
+        </div>
+      </div>
+      <button type="button" id="checkout-button">Checkout</button>
+      <div id='error'>
+        <!-- error -->
+      </div>
+    </section>
+  </body>
+  <script type="text/javascript">
+      const queryString = window.location.search;
+			const urlParams = new URLSearchParams(queryString);
+			const price = urlParams.get('price')
+      document.getElementById("price").innerText = price
+      const job = urlParams.get('job')
+      document.getElementById("job").innerText = job
+      const name = urlParams.get('name')
+      document.getElementById("name").innerText += name
+      const listingID = urlParams.get('listingID')
+    // Create an instance of the Stripe object with your publishable API key
+    var stripe = Stripe("pk_test_51IYQWqCCMJF8A5my17eaG2M5obMHTihmF4osdXtLNsdtgUBv8F11S9ic3qe3RVKHqxm7fhhIQdRIYsE3XfGuzfvW00RWSoUeNq");
+    var checkoutButton = document.getElementById("checkout-button");
+    price_number = price.slice(1,price.length)
+    checkoutButton.addEventListener("click", function () {
+      fetch("http://localhost:4241/make-payment", {
+        method: "POST",
+        headers:  {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            "customer_email": "employer@email.com",
+            "developer_id": name,
+            "name": job,
+            "price": price_number,
+            "listingID":listingID
+          })
+      })
+        .then(function (response) {
+          console.log('response:',response)
+          return response.json();
+        })
+        .then(function (session) {
+          console.log('session',session)
+          return stripe.redirectToCheckout({ sessionId: session.id });
+        })
+        .then(function (result) {
+          // If redirectToCheckout fails due to a browser or network
+          // error, you should display the localized error message to your
+          // customer using error.message.
+          if (result.error) {
+            alert(result.error.message);
+          }
+          else{
+            console.log('result:',result)
+          }
+        })
+        .catch(function (error) {
+          console.log("Error:" ,error);
+          document.getElementById('error').innerText = error;
+        });
+    });
+  </script>
+</html>

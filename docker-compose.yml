@@ -1,0 +1,121 @@
+version: "3.8"
+
+volumes:
+  rabbitmq_data:
+
+services:
+ 
+  #######################################
+  # Developer: The Developer microservice
+  #######################################
+  developer:
+    build:
+      context: ./
+      dockerfile: developer.Dockerfile
+    image: leonardwkwong/developer:esd #CHANGE TO YOUR DOCKER USERNAME
+    restart: always
+    environment:
+      dbURL: mysql+mysqlconnector://is213@host.docker.internal:3306/developer
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "5000:5000"
+
+  #####################################
+  # Listing: The Listing microservice
+  #####################################
+  listing:
+    build:
+      context: ./
+      dockerfile: listing.Dockerfile
+    image: leonardwkwong/listing:esd #CHANGE TO YOUR DOCKER USERNAME
+    restart: always
+    environment:
+      dbURL: mysql+mysqlconnector://is213@host.docker.internal:3306/listing
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "5001:5001"
+ 
+  #####################################
+  # Interest: The Interest microservice
+  #####################################
+  interest:
+    build:
+      context: ./
+      dockerfile: interest.Dockerfile
+    image: leonardwkwong/interest:esd #CHANGE TO YOUR DOCKER USERNAME
+    restart: always
+    environment:
+      dbURL: mysql+mysqlconnector://is213@host.docker.internal:3306/interest
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "5002:5002"
+
+  ####################################
+  # RabbitMQ: The messaging broker   
+  ####################################
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: esd-rabbit
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes: 
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  ###############################################
+  # Payment: The Payment microservice
+  ###############################################
+  payment:
+    build:
+      context: ./
+      dockerfile: payment.Dockerfile
+    image: leonardwkwong/payment:esd #CHANGE TO YOUR DOCKER USERNAME
+    restart: always
+    environment:
+      dbURL: mysql+mysqlconnector://is213@host.docker.internal:3306/payment_log
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "4241:4241"
+
+  #############################################################
+  # Notify Developer: The Notify Developer complex microservice
+  #############################################################
+  notify_dev:
+    build:
+      context: ./
+      dockerfile: notify_dev.Dockerfile
+    image: leonardwkwong/notify_dev:esd #CHANGE TO YOUR DOCKER USERNAME
+    restart: always
+    depends_on:
+      - notification
+      - listing
+      - rabbitmq
+    environment:
+      rabbit_host: rabbitmq
+      rabbit_port: 5672
+      PYTHONUNBUFFERED: 1
+      notification_URL: http://notification:5101/notification
+      listing_URL: http://listing:5001/update_listing
+    ports:
+      - "5100:5100"
+
+  #############################################################
+  # Notification: The Notification microservice
+  #############################################################
+  notification:
+    build:
+      context: ./
+      dockerfile: notification.Dockerfile
+    image: leonardwkwong/notification:esd #CHANGE TO YOUR DOCKER USERNAME
+    restart: always
+    depends_on:
+      - rabbitmq
+    environment:
+      rabbit_host: rabbitmq
+      rabbit_port: 5672
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "5101:5101"
+
+
